@@ -9,7 +9,10 @@
     h1 { color: #243b55; }
     button { padding: 10px 16px; cursor: pointer; border: 0; border-radius: 6px; background: #315b96; color: white; }
     button:hover { background: #244675; }
+    select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; margin-left: 10px; }
+    .filter-container { margin: 15px 0; }
     #status { margin: 16px 0; }
+    #status.error { color: #b00020; }
     ul { padding: 0; list-style: none; }
     li { background: white; margin: 10px 0; padding: 14px; border-radius: 8px; box-shadow: 0 1px 4px #ddd; }
     .muted { color: #666; }
@@ -17,8 +20,16 @@
 </head>
 <body>
   <h1>Список користувачів</h1>
-  <p>Користувачі з міста Gwenborough, відсортовані за ім'ям.</p>
-  <button id="reloadButton">Завантажити ще раз</button>
+  <p>Користувачі, відсортовані за ім'ям. Оберіть місто, щоб відфільтрувати список.</p>
+
+  <div class="filter-container">
+    <button id="reloadButton">Завантажити ще раз</button>
+    <label for="cityFilter">Фільтр за містом:</label>
+    <select id="cityFilter">
+      <option value="all">Усі міста</option>
+    </select>
+  </div>
+
   <p id="status">Завантаження...</p>
   <ul id="usersList"></ul>
   <script type="module" src="main.js"></script>

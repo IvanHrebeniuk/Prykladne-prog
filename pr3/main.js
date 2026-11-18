@@ -1,45 +1,86 @@
 import { getUsers } from './api.js';
 import { filterByCity, sortByName } from './utils.js';
 
-const usersList = document.querySelector('#usersList');
-const status = document.querySelector('#status');
-const reloadButton = document.querySelector('#reloadButton');
+const statusEl = document.getElementById('status');
+const listEl = document.getElementById('usersList');
+const reloadButton = document.getElementById('reloadButton');
+const cityFilter = document.getElementById('cityFilter');
 
+let allUsers = [];
+
+function setStatus(text, isError = false) {
+  statusEl.textContent = text;
+  statusEl.classList.toggle('error', isError);
+}
+
+// Заповнює випадаючий список унікальними містами.
+function fillCityOptions(users) {
+  const current = cityFilter.value;
+  const cities = [...new Set(users.map(u => u.address.city))].sort((a, b) => a.localeCompare(b));
+
+  cityFilter.innerHTML = '<option value="all">Усі міста</option>';
+  for (const city of cities) {
+    const option = document.createElement('option');
+    option.value = city;
+    option.textContent = city;
+    cityFilter.appendChild(option);
+  }
+
+  // Зберігаємо обране місто після перезавантаження, якщо воно ще існує.
+  cityFilter.value = cities.includes(current) ? current : 'all';
+}
+
+// Виводить користувачів у <ul>.
 function renderUsers(users) {
-  usersList.innerHTML = '';
+  listEl.innerHTML = '';
 
   if (users.length === 0) {
-    usersList.innerHTML = '<li>Користувачів не знайдено.</li>';
+    setStatus('Користувачів не знайдено.');
     return;
   }
 
-  users.forEach(user => {
-    const item = document.createElement('li');
-    item.innerHTML = `
-      <strong>${user.name}</strong> (${user.username})<br>
-      <span class="muted">Email: ${user.email}</span><br>
-      <span class="muted">Місто: ${user.address.city}</span>
-    `;
-    usersList.append(item);
-  });
+  for (const user of users) {
+    const li = document.createElement('li');
+
+    const name = document.createElement('strong');
+    name.textContent = user.name;
+
+    const info = document.createElement('div');
+    info.className = 'muted';
+    info.textContent = `${user.email} · ${user.address.city}`;
+
+    li.append(name, info);
+    listEl.appendChild(li);
+  }
+
+  setStatus(`Знайдено користувачів: ${users.length}`);
+}
+
+// Застосовує поточний фільтр і сортування.
+function applyFilter() {
+  const city = cityFilter.value;
+  const filtered = city === 'all' ? allUsers : filterByCity(allUsers, city);
+  renderUsers(sortByName(filtered));
 }
 
 async function loadUsers() {
-  status.textContent = 'Завантаження даних...';
-  usersList.innerHTML = '';
+  setStatus('Завантаження...');
+  listEl.innerHTML = '';
 
   try {
-    const users = await getUsers();
-    const filteredUsers = filterByCity(users, 'Gwenborough');
-    const sortedUsers = sortByName(filteredUsers);
-
-    renderUsers(sortedUsers);
-    status.textContent = `Завантажено користувачів: ${sortedUsers.length}`;
+    allUsers = await getUsers();
+    fillCityOptions(allUsers);
+    applyFilter();
   } catch (error) {
-    console.error('Помилка завантаження:', error);
-    status.textContent = `Не вдалося отримати дані: ${error.message}`;
+    if (error instanceof SyntaxError) {
+      setStatus('Помилка: отримано невалідний JSON.', true);
+    } else {
+      setStatus(`Помилка завантаження: ${error.message}`, true);
+    }
   }
 }
 
+cityFilter.addEventListener('change', applyFilter);
 reloadButton.addEventListener('click', loadUsers);
+
 loadUsers();
